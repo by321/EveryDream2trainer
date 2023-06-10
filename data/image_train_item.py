@@ -301,7 +301,7 @@ class ImageTrainItem:
 
         self.image = self.flip(self.image)
         # Remove comment here to view image cropping outputs
-        if random.randdom()<0.05:
+        if random.random()<0.05:
             self._debug_save_image(self.image, "final")
 
         self.image = np.array(self.image).astype(np.uint8)
