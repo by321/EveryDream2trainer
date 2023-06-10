@@ -279,30 +279,32 @@ class ImageTrainItem:
         return image
 
     def hydrate(self, save=False, crop_jitter=0.02):
-        """
-        save: save the cropped image to disk, for manual inspection of resize/crop
-        """
+        ## save: save the cropped image to disk, for manual inspection of resize/crop
         image = self.load_image()
-
+        #print(f"size={image.size}, target={self.target_wh}")
         width, height = image.size
-
-        img_jitter = min((width-self.target_wh[0])/self.target_wh[0], (height-self.target_wh[1])/self.target_wh[1])
-        img_jitter = min(img_jitter, crop_jitter)
-        img_jitter = max(img_jitter, 0.0)
-        
-        if img_jitter > 0.0:
-            image = self._percent_random_crop(image, img_jitter)
-
-        image = self._trim_to_aspect(image, self.target_wh)
-
-        self.image = image.resize(self.target_wh)
+        xdif:int=width  - self.target_wh[0]
+        ydif:int=height - self.target_wh[1]
+        if xdif==0 and ydif==0:
+            self.image = image
+        elif xdif<=0 and ydif<=0:
+            xdif=int(-random.random()*xdif)
+            ydif=int(-random.random()*ydif)
+            self.image=Image.new(mode="RGB", size=self.target_wh, color=(0,0,0))
+            self.image.paste(image,(xdif,ydif))
+        elif xdif>=0 and ydif>=0:
+            xdif=int(random.random()*xdif)
+            ydif=int(random.random()*ydif)
+            self.image=image.crop((xdif,ydif,xdif+self.target_wh[0],ydif+self.target_wh[1]))
+        else:
+            self.image = image.resize(self.target_wh)
 
         self.image = self.flip(self.image)
         # Remove comment here to view image cropping outputs
-        #self._debug_save_image(self.image, "final")
+        if random.randdom()<0.05:
+            self._debug_save_image(self.image, "final")
 
         self.image = np.array(self.image).astype(np.uint8)
-        
         return self
 
     def __compute_target_width_height(self):
